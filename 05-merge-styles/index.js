@@ -1,29 +1,24 @@
-const fs = require('fs');
+const fs = require('fs/promises');
 const path = require('path');
 
 const folder = path.join(__dirname, 'styles');
-const copyFolder = path.join(__dirname, 'project-dist', 'bundle.css');
+const copyFolder = path.join(__dirname, 'project-dist');
+const bundleFile = path.join(copyFolder, 'bundle.css');
 
-fs.readdir(folder, { withFileTypes: true }, (error, files) => {
-   if (error) {
+async function mergeStyles() {
+   try {
+      await fs.mkdir(folder, { recursive: true });
+      const files = await fs.readdir(folder);
+      const cssFiles = files.filter(file => path.extname(file) == '.css');
+      let compiledStyles = '';
+      for (let cssFile of cssFiles) {
+         const filePath = path.join(folder, cssFile);
+         const content = await fs.readFile(filePath, 'utf8');
+         compiledStyles += content + '\n';
+      };
+      await fs.writeFile(bundleFile, compiledStyles, 'utf8');
+   } catch (error) {
       console.log(error);
    };
-
-   files.forEach(file => {
-      const filePath = path.join(folder, file.name);
-
-      if (path.extname(filePath) == '.css') {
-         fs.readFile(filePath, 'utf8', (error, data) => {
-            if (error) {
-               console.log(error);
-            }
-            fs.appendFile(copyFolder, data, 'utf8', (error) => {
-               if (error) {
-                  console.log(error);
-               };
-            });
-         });
-      };
-
-   });
-});
+}
+mergeStyles();
